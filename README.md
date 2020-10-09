@@ -3,8 +3,9 @@
 ### Prerequisites
 
 1. I'm on Ruby 2.6.6, but it probably doesn't matter much.
-2. `gem install puma sidekiq-pro`
-3. Make sure you have empty Redis running on localhost:6379
+2. Clone this repo and go to its root.
+3. `gem install puma sidekiq-pro`
+4. Make sure you have empty Redis running on localhost:6379
    (You can run `docker-compose up` if you have Docker.)
 
 ### Reproducing
