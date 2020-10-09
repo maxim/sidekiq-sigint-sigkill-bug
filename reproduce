@@ -3,7 +3,7 @@
 require_relative 'sleepy_worker'
 require 'sidekiq/api'
 
-JOB_SLEEP = 30
+JOB_SLEEP = 20
 
 def log(msg)
   puts "REPRODUCE LOG: #{msg}"
@@ -11,28 +11,29 @@ end
 
 log 'Reproducing the bug'
 
-log '1. Starting Sidekiq and waiting 3s'
+log '1. Starting Sidekiq and waiting 5s'
 sidekiq_pid = spawn('sidekiq -c1 -r ./sidekiq.rb')
-sleep 3
+sleep 5
 
 log "Jobs in the default queue: #{Sidekiq::Queue.new.size}"
 log "Job in progress: #{Sidekiq::Workers.new.size}"
 
-log '2. Enqueueing a batch and waiting 3s'
+log '2. Enqueueing a batch and waiting 5s'
 batch = Sidekiq::Batch.new
 batch.jobs { SleepyWorker.perform_async(sleep: JOB_SLEEP) }
 bid = batch.bid
-sleep 3
+sleep 5
 
 log "Jobs in the default queue: #{Sidekiq::Queue.new.size}"
 log "Job in progress: #{Sidekiq::Workers.new.size}"
 log "Jobs pending in batch: #{Sidekiq::Batch::Status.new(bid).pending}"
 
-log '3. Sending SIGINT to Sidekiq and waiting 1s'
+log '3. Sending SIGINT to Sidekiq'
 Process.kill('INT', sidekiq_pid)
-sleep 1
+sleep 0.5
 
-log '4. Sending SIGKILL to Sidekiq before jobs ended and waiting 3s'
+# If this happened after you see "Bye!" then reproduce will not work.
+log '4. Sending SIGKILL to Sidekiq too soon'
 Process.kill('KILL', sidekiq_pid)
 sleep 3
 
@@ -44,13 +45,20 @@ log '5. Starting Sidekiq again and waiting 3s'
 sidekiq_pid = spawn('sidekiq -c1 -r ./sidekiq.rb')
 sleep 3
 
-log "Waiting for the job to finish."
-sleep JOB_SLEEP
+log "Waiting #{JOB_SLEEP + 5}s for the job to finish."
+sleep JOB_SLEEP + 5
 
 pending_size = Sidekiq::Batch::Status.new(bid).pending
 
 if pending_size > 0
+  log "Jobs in the default queue: #{Sidekiq::Queue.new.size}"
+  log "Job in progress: #{Sidekiq::Workers.new.size}"
+  log "Jobs pending in batch: #{pending_size}"
   log "Expected batch to complete, but still pending with #{pending_size} jobs"
 else
   log "Reproduce didn't work. Run the script again."
 end
+
+log 'Killing sidekiq'
+Process.kill('KILL', sidekiq_pid)
+sleep 3
