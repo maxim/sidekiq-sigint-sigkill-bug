@@ -1,4 +1,4 @@
-# How to reproduce.
+# How to reproduce
 
 ### Prerequisites
 
@@ -9,8 +9,8 @@
 
 ### Reproducing
 
-1. Make sure Redis is clear
-   You can run `./clear-redis`
+1. Make sure Redis is clear  
+   You can run `./clear-redis`  
    **Careful!** It clears all data in `localhost:6379` redis
 2. Make sure you don't have any Sidekiq instances running
 3. _Optional_ — Run `puma` to see the web dashboard
